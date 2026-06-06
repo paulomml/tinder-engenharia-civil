@@ -24,17 +24,69 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 const STEPS = [
   "Você",
-  "Login",
   "Fotos",
   "Preferências",
   "Revisão",
 ];
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+type RegisterForm = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
+const validateAuthFields = (
+  field: keyof RegisterForm,
+  value: string,
+  current: RegisterForm
+): string => {
+  if (field === "email") {
+    if (!value) return "E-mail obrigatório";
+    if (!EMAIL_REGEX.test(value)) return "E-mail inválido";
+  }
+  if (field === "password") {
+    if (!value) return "Senha obrigatória";
+    if (!PASSWORD_REGEX.test(value)) {
+      return "Mín. 8 caracteres, com 1 letra e 1 número";
+    }
+  }
+  if (field === "confirmPassword") {
+    if (!value) return "Confirme a senha";
+    if (value !== current.password) return "As senhas não conferem";
+  }
+  return "";
+};
+
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [authFields, setAuthFields] = useState<RegisterForm>({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [authErrors, setAuthErrors] = useState<RegisterForm>({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
+  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+
+  const handleAuthChange = (field: keyof RegisterForm, value: string) => {
+    const next: RegisterForm = { ...authFields, [field]: value };
+    setAuthFields(next);
+    setAuthErrors((prev) => ({
+      ...prev,
+      [field]: validateAuthFields(field, value, next),
+      ...(field === "password" && next.confirmPassword
+        ? { confirmPassword: validateAuthFields("confirmPassword", next.confirmPassword, next) }
+        : {}),
+    }));
+  };
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -42,31 +94,31 @@ export default function RegisterPage() {
         return (
           <div className="grid gap-4 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="grid gap-2">
-              <Label htmlFor="nome">Nome</Label>
-              <Input id="nome" placeholder="Como você quer ser chamado?" />
+              <Label htmlFor="nome" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Nome</Label>
+              <Input id="nome" autoComplete="name" enterKeyHint="next" placeholder="Como você quer ser chamado?" className="bg-white/5 border border-white/20 h-12 text-base transition-all" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="idade">Idade</Label>
-                <Input id="idade" type="number" placeholder="Sua idade" />
+                <Label htmlFor="idade" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Idade</Label>
+                <Input id="idade" type="number" inputMode="numeric" placeholder="Sua idade" className="bg-white/5 border border-white/20 h-12 text-base transition-all" />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="emoji">Emoji</Label>
-                <Input id="emoji" placeholder="Ex: 👷‍♂️" />
+                <Label htmlFor="emoji" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Emoji</Label>
+                <Input id="emoji" placeholder="Ex: 👷‍♂️" className="bg-white/5 border border-white/20 h-12 text-base transition-all" />
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="frase">Frase (Bio)</Label>
-              <Input id="frase" placeholder="Uma frase curta que te define" />
+              <Label htmlFor="frase" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Frase (Bio)</Label>
+              <Input id="frase" placeholder="Uma frase curta que te define" className="bg-white/5 border border-white/20 h-12 text-base transition-all" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="genero">Gênero</Label>
-                <Select>
-                  <SelectTrigger id="genero">
+                <Label htmlFor="genero" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Gênero</Label>
+                  <Select>
+                  <SelectTrigger id="genero" className="bg-white/5 border border-white/20 h-12 text-base transition-all">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -77,9 +129,9 @@ export default function RegisterPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="orientacao">Orientação</Label>
-                <Select>
-                  <SelectTrigger id="orientacao">
+                <Label htmlFor="orientacao" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Orientação</Label>
+                  <Select>
+                  <SelectTrigger id="orientacao" className="bg-white/5 border border-white/20 h-12 text-base transition-all">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -92,55 +144,100 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 pt-1">
               <div className="flex items-center space-x-2">
-                <Checkbox id="genero_visivel" />
-                <Label htmlFor="genero_visivel" className="text-sm font-normal">
+                <Checkbox id="genero_visivel" className="border-white/30 size-5" />
+                <Label htmlFor="genero_visivel" className="text-sm font-normal cursor-pointer">
                   Gênero visível?
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="orientacao_visivel" />
-                <Label htmlFor="orientacao_visivel" className="text-sm font-normal">
+                <Checkbox id="orientacao_visivel" className="border-white/30 size-5" />
+                <Label htmlFor="orientacao_visivel" className="text-sm font-normal cursor-pointer">
                   Orientação visível?
                 </Label>
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="curso">Curso</Label>
-              <Input id="curso" placeholder="Ex: Engenharia Civil" />
+              <Label htmlFor="curso" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Curso</Label>
+              <Input id="curso" placeholder="Ex: Engenharia Civil" className="bg-white/5 border border-white/20 h-12 text-base transition-all" />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="faculdade">Faculdade</Label>
-              <Input id="faculdade" defaultValue="UVA" />
+              <Label htmlFor="faculdade" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Faculdade</Label>
+              <Input id="faculdade" defaultValue="UVA" className="bg-white/5 border border-white/20 h-12 text-base transition-all" />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="instagram">Instagram</Label>
-              <Input id="instagram" placeholder="@seuusuario" />
+              <Label htmlFor="instagram" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Instagram</Label>
+              <Input id="instagram" placeholder="@seuusuario" className="bg-white/5 border border-white/20 h-12 text-base transition-all" />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">E-mail</Label>
+              <Input
+                id="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                enterKeyHint="next"
+                placeholder="seu@email.com"
+                value={authFields.email}
+                onChange={(e) => handleAuthChange("email", e.target.value)}
+                pattern={EMAIL_REGEX.source}
+                aria-invalid={!!authErrors.email}
+                className={`bg-white/5 border h-12 text-base transition-all ${authErrors.email ? "border-red-500/60" : "border-white/20"}`}
+              />
+              {authErrors.email && (
+                <p className="text-[11px] font-medium tracking-wide text-red-400">{authErrors.email}</p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                enterKeyHint="next"
+                placeholder="••••••••"
+                value={authFields.password}
+                onChange={(e) => handleAuthChange("password", e.target.value)}
+                pattern={PASSWORD_REGEX.source}
+                aria-invalid={!!authErrors.password}
+                className={`bg-white/5 border h-12 text-base transition-all ${authErrors.password ? "border-red-500/60" : "border-white/20"}`}
+              />
+              {authErrors.password ? (
+                <p className="text-[11px] font-medium tracking-wide text-red-400">{authErrors.password}</p>
+              ) : (
+                <p className="text-[10px] font-medium tracking-[0.2em] uppercase text-muted-foreground">
+                  Mín. 8 caracteres · 1 letra · 1 número
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="confirm_password" className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">Confirmar Senha</Label>
+              <Input
+                id="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                enterKeyHint="done"
+                placeholder="••••••••"
+                value={authFields.confirmPassword}
+                onChange={(e) => handleAuthChange("confirmPassword", e.target.value)}
+                pattern={PASSWORD_REGEX.source}
+                aria-invalid={!!authErrors.confirmPassword}
+                className={`bg-white/5 border h-12 text-base transition-all ${authErrors.confirmPassword ? "border-red-500/60" : "border-white/20"}`}
+              />
+              {authErrors.confirmPassword && (
+                <p className="text-[11px] font-medium tracking-wide text-red-400">{authErrors.confirmPassword}</p>
+              )}
             </div>
           </div>
         );
       case 2:
-        return (
-          <div className="grid gap-4 animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="grid gap-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" placeholder="seu@email.com" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" placeholder="••••••••" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="confirm_password">Confirmar Senha</Label>
-              <Input id="confirm_password" type="password" placeholder="••••••••" />
-            </div>
-          </div>
-        );
-      case 3:
         return (
           <div className="grid gap-4 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-primary/30 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/80 transition-colors">
@@ -151,61 +248,61 @@ export default function RegisterPage() {
             </div>
           </div>
         );
-      case 4:
+      case 3:
         return (
           <div className="grid gap-6 animate-in fade-in slide-in-from-right-4 duration-500">
-            <h3 className="text-center font-bold tracking-tighter uppercase">Quem você quer ver?</h3>
+            <h3 className="text-center text-lg font-bold tracking-tight uppercase text-white">Quem você quer ver?</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-muted/30 border-none p-4">
-                <Label className="font-bold mb-3 block text-center">HOMEM</Label>
-                <div className="space-y-2">
+              <Card className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <Label className="text-xs font-bold uppercase tracking-[0.15em] text-white mb-3 block text-center">Homem</Label>
+                <div className="space-y-2.5">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="h-hetero" />
-                    <Label htmlFor="h-hetero" className="text-xs font-normal">Hétero</Label>
+                    <Checkbox id="h-hetero" className="border-white/30 size-5" />
+                    <Label htmlFor="h-hetero" className="text-sm font-normal cursor-pointer">Hétero</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="h-gay" />
-                    <Label htmlFor="h-gay" className="text-xs font-normal">Gay</Label>
+                    <Checkbox id="h-gay" className="border-white/30 size-5" />
+                    <Label htmlFor="h-gay" className="text-sm font-normal cursor-pointer">Gay</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="h-bi" />
-                    <Label htmlFor="h-bi" className="text-xs font-normal">Bi/Pan</Label>
-                  </div>
-                </div>
-              </Card>
-              <Card className="bg-muted/30 border-none p-4">
-                <Label className="font-bold mb-3 block text-center">MULHER</Label>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="m-hetero" />
-                    <Label htmlFor="m-hetero" className="text-xs font-normal">Hétero</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="m-lesbica" />
-                    <Label htmlFor="m-lesbica" className="text-xs font-normal">Lésbica</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="m-bi" />
-                    <Label htmlFor="m-bi" className="text-xs font-normal">Bi/Pan</Label>
+                    <Checkbox id="h-bi" className="border-white/30 size-5" />
+                    <Label htmlFor="h-bi" className="text-sm font-normal cursor-pointer">Bi/Pan</Label>
                   </div>
                 </div>
               </Card>
-              <Card className="bg-muted/30 border-none p-4">
-                <Label className="font-bold mb-3 block text-center">NÃO BINÁRIO</Label>
-                <div className="space-y-2">
+              <Card className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <Label className="text-xs font-bold uppercase tracking-[0.15em] text-white mb-3 block text-center">Mulher</Label>
+                <div className="space-y-2.5">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="nb-all" />
-                    <Label htmlFor="nb-all" className="text-xs font-normal">Todos</Label>
+                    <Checkbox id="m-hetero" className="border-white/30 size-5" />
+                    <Label htmlFor="m-hetero" className="text-sm font-normal cursor-pointer">Hétero</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="m-lesbica" className="border-white/30 size-5" />
+                    <Label htmlFor="m-lesbica" className="text-sm font-normal cursor-pointer">Lésbica</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="m-bi" className="border-white/30 size-5" />
+                    <Label htmlFor="m-bi" className="text-sm font-normal cursor-pointer">Bi/Pan</Label>
+                  </div>
+                </div>
+              </Card>
+              <Card className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <Label className="text-xs font-bold uppercase tracking-[0.15em] text-white mb-3 block text-center">Não binário</Label>
+                <div className="space-y-2.5">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="nb-all" className="border-white/30 size-5" />
+                    <Label htmlFor="nb-all" className="text-sm font-normal cursor-pointer">Todos</Label>
                   </div>
                 </div>
               </Card>
             </div>
           </div>
         );
-      case 5:
+      case 4:
         return (
           <div className="grid gap-4 animate-in fade-in zoom-in-95 duration-500">
-            <div className="relative aspect-[3/4] w-full max-w-[280px] mx-auto rounded-xl overflow-hidden bg-muted border-2 border-primary/20 shadow-xl">
+            <div className="relative aspect-[3/4] w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden bg-muted border-2 border-primary/20 shadow-xl">
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
               <div className="absolute bottom-0 left-0 right-0 p-4 z-20 text-white">
                 <div className="flex items-baseline gap-2">
@@ -223,7 +320,7 @@ export default function RegisterPage() {
                 <span className="text-4xl font-black rotate-12">PHOTO PREVIEW</span>
               </div>
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-2">
+            <p className="text-center text-[11px] font-medium tracking-wide text-muted-foreground mt-2">
               Quase lá! Revise seu perfil e clique em REGISTRAR.
             </p>
           </div>
@@ -234,57 +331,77 @@ export default function RegisterPage() {
   };
 
   return (
-    <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold tracking-tighter text-center uppercase">
-          Registro
-        </CardTitle>
-        <CardDescription className="text-center">
-          {currentStep === 5 ? "Tudo pronto para começar!" : "Crie sua conta para começar as conexões."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-6">
-        {/* Stepper Visual */}
-        <div className="flex justify-between items-center text-[10px] uppercase tracking-widest border-b pb-4 overflow-x-auto no-scrollbar gap-2">
-          {STEPS.map((step, index) => {
-            const stepNumber = index + 1;
-            const isActive = currentStep === stepNumber;
-            return (
-              <span
-                key={step}
-                className={`whitespace-nowrap transition-colors duration-300 ${
-                  isActive ? "text-primary font-bold" : "text-muted-foreground"
-                }`}
-              >
-                Passo {stepNumber}: {step}
-              </span>
-            );
-          })}
-        </div>
+    <div className="flex flex-col gap-4 motion-safe:animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <Card className="w-full max-w-md mx-auto border border-white/10 bg-card/80 backdrop-blur-md shadow-2xl shadow-black/80 rounded-2xl">
+        <CardHeader className="space-y-2 pb-6 px-6 pt-7">
+          <CardTitle className="text-3xl font-black tracking-tight text-center uppercase leading-[1.05] text-white">
+            Registro
+          </CardTitle>
+          <CardDescription className="text-center text-sm font-normal text-muted-foreground leading-relaxed">
+            {currentStep === STEPS.length ? "Tudo pronto para começar!" : "Crie sua conta para começar as conexões."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 px-6">
+          {/* Stepper Visual */}
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-4">
+            {STEPS.map((step, index) => {
+              const stepNumber = index + 1;
+              const isActive = currentStep === stepNumber;
+              const isLast = index === STEPS.length - 1;
+              return (
+                <React.Fragment key={step}>
+                  <div className="flex flex-col items-center gap-2 shrink-0">
+                    <div
+                      className={`w-9 h-9 rounded-full grid place-items-center text-sm font-bold transition-colors duration-300 ${
+                        isActive
+                          ? "bg-primary text-black"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {stepNumber}
+                    </div>
+                    <span
+                      className={`text-[10px] uppercase tracking-widest transition-colors duration-300 ${
+                        isActive ? "text-white font-bold" : "text-muted-foreground"
+                      }`}
+                    >
+                      {step}
+                    </span>
+                  </div>
+                  {!isLast && (
+                    <div className="h-[2px] flex-1 bg-white/10 self-center mb-5" />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
 
-        {renderStepContent()}
-      </CardContent>
-      <CardFooter className="flex justify-between gap-4">
-        {currentStep === 1 ? (
-          <Button variant="outline" className="flex-1" asChild>
-            <Link href="/entrar">VOLTAR</Link>
-          </Button>
-        ) : (
-          <Button variant="outline" className="flex-1" onClick={prevStep}>
-            VOLTAR
-          </Button>
-        )}
+          <div className="max-h-[calc(100dvh-360px)] overflow-y-auto pr-1 -mr-1">
+            {renderStepContent()}
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-between gap-3 pt-6 px-6 pb-7 !border-t-0 !bg-transparent">
+          {currentStep === 1 ? (
+            <Button variant="outline" className="flex-1 h-12 border border-white/20 bg-transparent text-white hover:bg-white/10 font-bold uppercase tracking-wider text-xs active:scale-[0.98] transition-all" asChild>
+              <Link href="/entrar">VOLTAR</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" className="flex-1 h-12 border border-white/20 bg-transparent text-white hover:bg-white/10 font-bold uppercase tracking-wider text-xs active:scale-[0.98] transition-all" onClick={prevStep}>
+              VOLTAR
+            </Button>
+          )}
 
-        {currentStep === 5 ? (
-          <Button className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-            REGISTRAR
-          </Button>
-        ) : (
-          <Button className="flex-1" onClick={nextStep}>
-            PRÓXIMO
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+          {currentStep === STEPS.length ? (
+            <Button className="flex-1 h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider text-xs shadow-lg shadow-primary/20 active:scale-[0.98] transition-all">
+              REGISTRAR
+            </Button>
+          ) : (
+            <Button className="flex-1 h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider text-xs shadow-lg shadow-primary/20 active:scale-[0.98] transition-all" onClick={nextStep}>
+              PRÓXIMO
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
